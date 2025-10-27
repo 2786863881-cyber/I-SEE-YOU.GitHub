@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文档观察者</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            background-color: #0a0a0a;
+            color: #e0e0e0;
+            font-family: 'Microsoft YaHei', sans-serif;
+            line-height: 1.6;
+            padding: 20px;
+            transition: background-color 2s;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #1a1a1a;
+            border-radius: 8px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #c0c0c0;
+        }
+        
+        .document {
+            font-size: 16px;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #222;
+            border-radius: 5px;
+            min-height: 400px;
+            line-height: 1.8;
+            overflow-y: auto;
+        }
+        
+        .highlight {
+            color: #ff4444;
+            font-weight: bold;
+            text-shadow: 0 0 5px rgba(255, 0, 0, 0.5);
+        }
+        
+        .timer {
+            text-align: center;
+            margin: 10px 0;
+            font-size: 14px;
+            color: #888;
+        }
+        
+        .eye-container {
+            display: none;
+            text-align: center;
+            margin-top: 30px;
+            padding: 20px;
+        }
+        
+        .eye-title {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #ff4444;
+            text-shadow: 0 0 10px rgba(255, 0, 0, 0.7);
+        }
+        
+        .eye-image {
+            width: 100%;
+            max-width: 600px;
+            height: auto;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(255, 0, 0, 0.5);
+            opacity: 0;
+            transform: scale(0.9);
+            transition: opacity 2s ease, transform 2s ease;
+        }
+        
+        .eye-container.active .eye-image {
+            opacity: 1;
+            transform: scale(1);
+        }
+        
+        .final-message {
+            text-align: center;
+            margin-top: 30px;
+            font-size: 28px;
+            color: #ff4444;
+            text-shadow: 0 0 15px rgba(255, 0, 0, 0.8);
+            display: none;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 12px;
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>机密文档 #0809</h1>
+        
+        <div class="timer" id="timer">观测开始: 0秒</div>
+        
+        <div class="document" id="document">
+            <p>项目代号："安和"</p >
+            <p>日期：████年██月██日</p >
+            <p>地点：未知区域</p >
+            <br>
+            <p>初步观察报告：</p >
+            <p>目标表现出异常平静的模式，似乎能够感知到我的存在。在测试中，目标对观察行为做出了反应，尽管我采取了最高级别的隐蔽措施。</p >
+            <br>
+            <p>详细记录：</p >
+            <p>实验开始时，目标处于正常状态。随着观察时间的延长，目标开始表现出笑意。在第17分钟，目标突然转向观察我设备的方向，尽管设备完全隐蔽。</p >
+            <p>进一步测试显示，目标能够感知到观察者的视线，即使通过间接观察手段。这种现象无法用现有科学理论解释。</p >
+            <br>
+            <p>结论：</p >
+            <p>目标具有某种形式的超感官知觉能力，能够检测到观察行为。建议提升观察等级至"红色"，并考虑终止观察以避免不可预见的后果。</p >
+            <br>
+            <p>附加记录：</p >
+            <p>在最后一次观察中，目标似乎通过某种方式向观察者传递了信息。“我在”信息内容无法完全解读，但包含重复出现的模式。“让我带你走吧”</p >
+        </div>
+        
+        <div class="eye-container" id="eyeContainer">
+            <div class="eye-title">你已被观测到</div>
+            <img src="https://p3-flow-imagex-sign.byteimg.com/tos-cn-i-a9rns2rl98/rc/5c7f17a3b4ff4372922cc706dfb06d4f.jpeg~tplv-a9rns2rl98-image.jpeg?rcl=202510272013114A8533343FD0CA1A66F3&rk3s=8e244e95&rrcfp=e9668010&x-expires=1762171991&x-signature=%2FMGLprMJgxSi3UtLgn0iUAnBXy0%3D" 
+                 alt="观测图像" class="eye-image">
+        </div>
+        
+        <div class="final-message" id="finalMessage">安和观测完成</div>
+    </div>
+    
+    <div class="footer">
+        文档状态：<span id="status">正常</span>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const documentElement = document.getElementById('document');
+            const timerElement = document.getElementById('timer');
+            const statusElement = document.getElementById('status');
+            const eyeContainer = document.getElementById('eyeContainer');
+            const finalMessage = document.getElementById('finalMessage');
+            
+            // 前面的时间参数保持不变
+            let startTime = Date.now();
+            let interval = 2000; // 初始间隔2秒
+            let minInterval = 50; // 最小间隔50毫秒
+            let totalDuration = 30000; // 前30秒随机插入文字（不变）
+            let elapsedTime = 0;
+            let isReplacementPhase = false;
+            
+            // 更新计时器和状态
+            function updateTimer() {
+                elapsedTime = Date.now() - startTime;
+                const seconds = Math.floor(elapsedTime / 1000);
+                timerElement.textContent = `观测开始: ${seconds}秒`;
+                
+                if (elapsedTime >= totalDuration && !isReplacementPhase) {
+                    startReplacementPhase();
+                }
+            }
+            
+            const timerInterval = setInterval(updateTimer, 100);
+            
+            // 在文档中随机插入文字（逻辑不变）
+            function insertText() {
+                const paragraphs = documentElement.getElementsByTagName('p');
+                if (paragraphs.length === 0) return;
+                
+                const randomParagraph = paragraphs[Math.floor(Math.random() * paragraphs.length)];
+                const textNodes = getTextNodes(randomParagraph);
+                
+                if (textNodes.length === 0) return;
+                
+                const randomTextNode = textNodes[Math.floor(Math.random() * textNodes.length)];
+                const originalText = randomTextNode.textContent;
+                
+                const insertPosition = Math.floor(Math.random() * originalText.length);
+                const newText = originalText.slice(0, insertPosition) + 
+                               '<span class="highlight"> 我看见你了 </span>' + 
+                               originalText.slice(insertPosition);
+                
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = newText;
+                randomTextNode.parentNode.replaceChild(tempDiv.firstChild, randomTextNode);
+                
+                interval = Math.max(minInterval, interval * 0.9);
+                if (Date.now() - startTime < totalDuration) {
+                    setTimeout(insertText, interval);
+                }
+            }
+            
+            function getTextNodes(element) {
+                const textNodes = [];
+                function findTextNodes(node) {
+                    if (node.nodeType === Node.TEXT_NODE) {
+                        textNodes.push(node);
+                    } else {
+                        for (let child of node.childNodes) {
+                            findTextNodes(child);
+                        }
+                    }
+                }
+                findTextNodes(element);
+                return textNodes;
+            }
+            
+            // 开始替换阶段（关键修改：缩短刷屏和等待时间）
+            function startReplacementPhase() {
+                isReplacementPhase = true;
+                statusElement.textContent = "异常";
+                statusElement.style.color = "#ff4444";
+                documentElement.innerHTML = '';
+                
+                // 1. 减少刷屏的数量（从100条减少到30条）
+                let count = 0;
+                const maxCount = 30; // 原100，现30
+                // 2. 加快刷屏速度（从100ms间隔缩短到50ms）
+                const fastInterval = setInterval(() => {
+                    const textElement = document.createElement('p');
+                    textElement.innerHTML = '<span class="highlight">我看见你了</span>'.repeat(3 + Math.floor(Math.random() * 5));
+                    documentElement.appendChild(textElement);
+                    documentElement.scrollTop = documentElement.scrollHeight;
+                    
+                    count++;
+                    if (count >= maxCount) {
+                        clearInterval(fastInterval);
+                        // 3. 缩短刷屏后到显示图片的等待时间（从10秒缩短到2秒）
+                        setTimeout(showImage, 2000); // 原10000，现2000
+                    }
+                }, 50); // 原100，现50
+            }
+            
+            // 显示图片（缩短图片到观测完成的时间）
+            function showImage() {
+                documentElement.style.display = 'none';
+                eyeContainer.style.display = 'block';
+                setTimeout(() => {
+                    eyeContainer.classList.add('active');
+                }, 100);
+                
+                // 4. 缩短图片显示到"观测完成"的时间（从3秒缩短到1秒）
+                setTimeout(() => { // 原3000，现1000
+                    finalMessage.style.display = 'block';
+                    document.body.style.backgroundColor = '#200000';
+                }, 1000);
+            }
+            
+            setTimeout(insertText, 1000);
+        });
+    </script>
+</body>
+</html>
